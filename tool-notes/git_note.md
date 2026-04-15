@@ -260,8 +260,81 @@ git clone https://github.com/{User}/{RepositoryName}.git
 
 ### 1. Github的代码管理结构
 
+GitHub的代码管理基于分布式版本控制，核心是分支模型。主流分支策略包括Git Flow、GitHub Flow和Trunk-Based Development。工业级团队通常采用Git Flow或其变体，以支持并行开发、版本发布和紧急修复。
+
+- **主分支 (main/master)**: 生产就绪代码，代表最新稳定版本。
+- **开发分支 (develop)**: 集成分支，用于合并特性分支，准备发布。
+- **特性分支 (feature/xxx)**: 短期分支，用于开发新功能，从develop分支创建。
+- **发布分支 (release/xxx)**: 预发布分支，用于最终测试和bug修复，从develop创建。
+- **热修复分支 (hotfix/xxx)**: 紧急分支，从main创建，用于生产bug修复。
 
 ### 2. 从本地获取和上传到不同远程分支操作
 
+#### 特性分支创建与同步规则
+1. **创建特性分支**:
+   - 从develop分支创建: `git checkout -b feature/new-feature develop`
+   - 推送至远程: `git push -u origin feature/new-feature`
+2. **同步最新代码**:
+   - 定期合并develop到特性分支: `git merge develop` 或 `git rebase develop`
+   - 避免长时间分支以减少冲突。
+3. **提交特性分支**:
+   - 本地提交: `git add . && git commit -m "feat: add new feature"`
+   - 推送: `git push origin feature/new-feature`
+4. **合并回develop**:
+   - 创建PR/MR，代码评审通过后合并。
+   - 合并后删除分支: `git branch -d feature/new-feature && git push origin --delete feature/new-feature`
+
+#### 代码冲突预处理方案
+- **预防冲突**: 每日同步主干，保持分支短寿（<5天）。
+- **检测冲突**: 在推送前运行 `git fetch && git rebase origin/develop`。
+- **解决冲突**:
+  1. 编辑冲突文件，保留正确版本。
+  2. `git add <file>` 标记解决。
+  3. `git rebase --continue` 或 `git commit` 完成。
+- **最佳实践**: 使用 `git mergetool` 工具辅助解决。
+
+#### PR/MR提交流程
+1. **创建PR**: 在GitHub/GitLab上，从特性分支到develop分支创建PR。
+2. **描述**: 填写标题、描述变更内容、关联issue。
+3. **评审**: 至少1-2名评审者，检查代码质量、测试覆盖。
+4. **CI检查**: 确保所有自动化测试通过。
+5. **合并**: 使用Squash Merge保持历史干净，合并后删除分支。
+
+#### 代码评审卡点约定
+- **评审标准**: 代码规范、性能、安全性、测试完整性。
+- **卡点**: 未通过CI、代码覆盖率<80%、安全漏洞。
+- **反馈**: 评审者提供具体建议，开发者响应并修改。
+- **审批**: 评审通过后方可合并。
+
+#### 主干同步机制
+- **每日同步**: 所有分支从main/develop拉取最新代码。
+- **自动化**: 配置CI在PR时检查与main的兼容性。
+- **回流**: 热修复分支修复后，同时合并到develop和main。
+
+#### 紧急Hotfix分支处理逻辑
+1. **创建**: 从main创建 `git checkout -b hotfix/critical-fix main`
+2. **修复**: 快速修复bug，提交并测试。
+3. **合并**: 直接合并到main和develop: `git checkout main && git merge hotfix/critical-fix`
+4. **标签**: 发布新版本 `git tag v1.1.1`
+5. **清理**: 删除分支 `git branch -d hotfix/critical-fix`
+
+#### 版本发布分支管理
+1. **创建发布分支**: 从develop创建 `git checkout -b release/v1.0 develop`
+2. **稳定化**: 仅允许bug修复，禁止新功能。
+3. **测试**: 运行完整测试套件。
+4. **发布**: 合并到main `git checkout main && git merge release/v1.0`，打标签 `git tag v1.0`
+5. **回流**: 合并回develop `git checkout develop && git merge release/v1.0`
+6. **清理**: 删除分支。
+
+#### 常见团队协作踩坑规避方案
+- **分支过长**: 设置分支生命周期上限，强制评审。
+- **强制推送**: 禁用force push到共享分支。
+- **未同步**: 要求每日rebase。
+- **历史混乱**: 使用Conventional Commits规范提交信息。
+- **权限管理**: 配置分支保护，只允许PR合并。
 
 ### 3. 其他
+
+- **工具集成**: 使用GitHub Actions或GitLab CI/CD自动化流程。
+- **培训**: 团队成员熟悉分支策略，避免误操作。
+- **文档**: 维护CONTRIBUTING.md记录规则。
