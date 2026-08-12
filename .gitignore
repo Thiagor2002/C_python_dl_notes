@@ -111,3 +111,5 @@ temp/
 # 可选：如果数据在 repo 内
 # data/*.jpg
 # data/*.png
+
+python/*.ipynb
